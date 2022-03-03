@@ -9,9 +9,9 @@ Planning to:
     DONE Calculate Time Elapsed
     DONE Retrieve Ground Elevation Data from USGS,
     - Calculate horizontal distance covered
-    - Employ threading for get_elev()
-    - Plot key data (altitude, different speeds, gr) over jump duration
-    - Plot ground elevation underneath it all (with transparency)
+    DONE Employ threading for get_elev()
+    DONE Plot key data (altitude, different speeds, gr) over jump duration
+    DONE Plot ground elevation underneath it all (with transparency)
     - Plot 4D flight data with error bars & color changing for speed & gr
     - Streamlit to deploy this to webpage
     - Plotly/Dash for interactive plots
@@ -21,6 +21,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import OrderedDict
 # from datetime import datetime
 from tkinter import Tk
@@ -112,26 +113,31 @@ def get_elev(df, units='Meters'):
     Optional positional argument is units as either 'Meters' or 'Feet'.
     Default is Meters
     """
-    # Apply input checkingn for 'meters'/'feet'
+    url = "https://nationalmap.gov/epqs/pqs.php?"
+
+    def query_USGS(address):
+        USGS = 'USGS_Elevation_Point_Query_Service'
+        EL_QUERY = 'Elevation_Query'
+        q_result = requests.get(address)
+        return q_result.json()[USGS][EL_QUERY]['Elevation']
+
+    # Apply input checking for 'meters'/'feet'
     if units.lower() in ['feet', 'ft', 'f']:
         units = 'Feet'
     else:
         units = 'Meters'
+    # elev_series = OrderedDict()
+    url_list = [
+                url
+                + "x={}&y={}&units={}&output=json".format(point.lon, point.lat, units)
+                for _, point in df.iterrows()
+               ]
 
-    elev_series = OrderedDict()
-    for i, point in df.iterrows():
-        url = "https://nationalmap.gov/epqs/pqs.php?"
-        args = "x={}&y={}&units={}&output=json".format(point.lon,
-                                                       point.lat,
-                                                       units)
-        api_url = url + args
-        elev_response = requests.get(api_url)
-        usgs = 'USGS_Elevation_Point_Query_Service'
-        el_query = 'Elevation_Query'
-        elevation = elev_response.json()[usgs][el_query]['Elevation']
-        elev_series[i] = elevation
+    with ThreadPoolExecutor() as executor:
+        elev_series = executor.map(query_USGS, url_list)
+
     df2 = df.copy()
-    df2['ground_elev'] = elev_series.values()
+    df2['ground_elev'] = list(elev_series)
     return df2
 
 
@@ -164,6 +170,83 @@ def open_file():
     print('Opening {}'.format(filename))
     return filename
 
+def plot_jump(df, csvname=''):
+    fig = plt.figure()
+    ax1 = fig.subplots()
+
+    line_h = ax1.plot(df['time_elapsed'], df['velH'],
+                      color='blue',
+                      label='Horiz V')
+    line_v = ax1.plot(df['time_elapsed'], df['velD'],
+                      color='green',
+                      label='Vert V')
+    line_total = ax1.plot(df['time_elapsed'], df['velT'],
+                          color='red',
+                          label='Total V')
+    ax1.set_xlabel('Time Elapsed (s)')
+    ax1.set_ylabel('Velocity (m/s)')
+    ax1.set_title('{} Jump Data'.format(csvname))
+    ax1.grid()
+
+    ax2 = ax1.twinx()
+    line_hmsl = ax2.plot(df['time_elapsed'], df['hMSL'],
+                         color='black',
+                         label='H (MSL)')
+    ax2.set_ylabel('Height-MSL (m)')
+
+    lines = line_h + line_v + line_total + line_hmsl
+
+    if elev_bool:
+        line_gelev = ax2.plot(df['time_elapsed'],
+                              df['ground_elev'],
+                              color='brown',
+                              label='Ground Elevation')
+        lines += line_gelev
+
+    labs = [line.get_label() for line in lines]
+    # fig.legend(['Horiz V', 'Vert V', 'Total V', 'H-MSL'], loc=1)
+    ax1.legend(lines, labs, loc=1)
+
+def plot_jump_fill(df, csvname=''):
+    fig = plt.figure()
+    ax1 = fig.subplots()
+
+    line_h = ax1.plot(df['time_elapsed'], df['velH'],
+                      color='blue',
+                      label='Horiz V')
+    line_v = ax1.plot(df['time_elapsed'], df['velD'],
+                      color='green',
+                      label='Vert V')
+    line_total = ax1.plot(df['time_elapsed'], df['velT'],
+                          color='red',
+                          label='Total V')
+    ax1.set_xlabel('Time Elapsed (s)')
+    ax1.set_ylabel('Velocity (m/s)')
+    ax1.set_title('{} Jump Data'.format(csvname))
+    ax1.grid()
+
+    ax2 = ax1.twinx()
+    line_hmsl = ax2.plot(df['time_elapsed'], df['hMSL'],
+                         color='black',
+                         label='H (MSL)')
+    ax2.set_ylabel('Height-MSL (m)')
+
+    lines = line_h + line_v + line_total + line_hmsl
+
+    if elev_bool:
+        line_gelev = ax2.plot(df['time_elapsed'],
+                              df['ground_elev'],
+                              color='brown',
+                              label='Ground Elevation')
+        ax2.fill_between(df['time_elapsed'],
+                         df['ground_elev'],
+                         df['ground_elev'].min(),
+                         color='brown', alpha=0.2)
+        lines += line_gelev
+
+    labs = [line.get_label() for line in lines]
+    # fig.legend(['Horiz V', 'Vert V', 'Total V', 'H-MSL'], loc=1)
+    ax1.legend(lines, labs, loc=1)
 
 if __name__ == '__main__':
     # Open GUI pop-up explorer window to find file
@@ -176,23 +259,16 @@ if __name__ == '__main__':
     jump_df = find_jump(flysight_df)
     # Calculate and add time_elapsed for Jump
     jump_df = convert_time(jump_df)  # convert_time could become a Class method
-    
-    # Download ground elevation from API
-    # Need to employ multithreading for faster result
-    # jump_df = get_elev(jump_df)
 
-# Plot it for checking
-    jump_df.plot(x='time_elapsed', y='hMSL',
-                 title='{} Jump Data'.format(csvname),
-                 color='black',
-                 xlabel='Time Elapsed (s)',
-                 ylabel='Height-MSL (m)')
-    plt2 = plt.twinx()
-    plt2.plot(jump_df['time_elapsed'], jump_df['velH'], color='blue')
-    plt2.plot(jump_df['time_elapsed'], jump_df['velD'], color='brown')
-    plt2.plot(jump_df['time_elapsed'], jump_df['velT'], color='red')
-    plt2.ylabel = 'Velocity (m/s)'
-    plt2.legend(['Horiz V', 'Vert V', 'Total V'])
+    # Download ground elevation from API
+    elev_bool = True
+    if elev_bool:
+        jump_df = get_elev(jump_df)
+
+    # Plot it for checking
+    #plot_jump(jump_df, csvname)
+    plot_jump_fill(jump_df, csvname)
+
+    # plt2.legend()
     # plt3 = plt2.twinx()
     # plt3.plot(jump_df['time_elapsed'], jump_df['gr'], color='green')
-
