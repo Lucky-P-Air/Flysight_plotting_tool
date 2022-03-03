@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from collections import OrderedDict
+# from collections import OrderedDict
 # from datetime import datetime
 from tkinter import Tk
 from tkinter import filedialog
@@ -170,6 +170,7 @@ def open_file():
     print('Opening {}'.format(filename))
     return filename
 
+
 def plot_jump(df, csvname=''):
     fig = plt.figure()
     ax1 = fig.subplots()
@@ -196,44 +197,7 @@ def plot_jump(df, csvname=''):
 
     lines = line_h + line_v + line_total + line_hmsl
 
-    if elev_bool:
-        line_gelev = ax2.plot(df['time_elapsed'],
-                              df['ground_elev'],
-                              color='brown',
-                              label='Ground Elevation')
-        lines += line_gelev
-
-    labs = [line.get_label() for line in lines]
-    # fig.legend(['Horiz V', 'Vert V', 'Total V', 'H-MSL'], loc=1)
-    ax1.legend(lines, labs, loc=1)
-
-def plot_jump_fill(df, csvname=''):
-    fig = plt.figure()
-    ax1 = fig.subplots()
-
-    line_h = ax1.plot(df['time_elapsed'], df['velH'],
-                      color='blue',
-                      label='Horiz V')
-    line_v = ax1.plot(df['time_elapsed'], df['velD'],
-                      color='green',
-                      label='Vert V')
-    line_total = ax1.plot(df['time_elapsed'], df['velT'],
-                          color='red',
-                          label='Total V')
-    ax1.set_xlabel('Time Elapsed (s)')
-    ax1.set_ylabel('Velocity (m/s)')
-    ax1.set_title('{} Jump Data'.format(csvname))
-    ax1.grid()
-
-    ax2 = ax1.twinx()
-    line_hmsl = ax2.plot(df['time_elapsed'], df['hMSL'],
-                         color='black',
-                         label='H (MSL)')
-    ax2.set_ylabel('Height-MSL (m)')
-
-    lines = line_h + line_v + line_total + line_hmsl
-
-    if elev_bool:
+    if 'ground_elev' in df.columns:
         line_gelev = ax2.plot(df['time_elapsed'],
                               df['ground_elev'],
                               color='brown',
@@ -247,6 +211,7 @@ def plot_jump_fill(df, csvname=''):
     labs = [line.get_label() for line in lines]
     # fig.legend(['Horiz V', 'Vert V', 'Total V', 'H-MSL'], loc=1)
     ax1.legend(lines, labs, loc=1)
+
 
 if __name__ == '__main__':
     # Open GUI pop-up explorer window to find file
@@ -266,8 +231,7 @@ if __name__ == '__main__':
         jump_df = get_elev(jump_df)
 
     # Plot it for checking
-    #plot_jump(jump_df, csvname)
-    plot_jump_fill(jump_df, csvname)
+    plot_jump(jump_df, csvname)
 
     # plt2.legend()
     # plt3 = plt2.twinx()
