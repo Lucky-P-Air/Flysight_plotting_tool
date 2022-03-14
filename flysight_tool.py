@@ -211,6 +211,7 @@ def plot_jump(df, csvname=''):
     labs = [line.get_label() for line in lines]
     # fig.legend(['Horiz V', 'Vert V', 'Total V', 'H-MSL'], loc=1)
     ax1.legend(lines, labs, loc=1)
+    return
 
 
 if __name__ == '__main__':
