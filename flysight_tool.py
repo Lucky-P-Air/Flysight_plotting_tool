@@ -32,6 +32,8 @@ from tkinter import filedialog
 # Geopy (https://pypi.org/project/geopy/)
 # LatLon (https://pypi.org/project/LatLon/)
 
+SPEED_START = 2 # m/s. Threshold for identifying jump start
+SPEED_END = 0.5 # m/s. Threshold for identifying jump end
 
 class Flysight:
     # Design this class with Object Oriented SOLID Design (specifically L)
@@ -67,7 +69,7 @@ def convert_time(df_in):
     return df
 
 
-def find_jump(df, speed=2):
+def find_jump(df, speed_start=SPEED_START, speed_end=SPEED_END):
     """Trim the Flysight file to only include the jump data and remove
     extraneous data from moving around before and after jump
     Input is a dataframe.
@@ -85,7 +87,7 @@ def find_jump(df, speed=2):
     # total_speed = np.sqrt(horiz_speed**2 + vert_speed**2)
     # df['velT'] = total_speed
 
-    df_at_speed = df[df['velT'] >= 2]
+    df_at_speed = df[df['velT'] >= speed_start]
     df_at_speed.reset_index(inplace=True)
 
     # Capture time_elapsed in seconds for when speed threshold is breached
@@ -93,7 +95,7 @@ def find_jump(df, speed=2):
     start_ind = df_at_speed.loc[0, 'index']
 
     df_after_exit = df.iloc[(start_ind):]
-    df_after_landing = df_after_exit[df_after_exit['velT'] <= 0.5]
+    df_after_landing = df_after_exit[df_after_exit['velT'] <= speed_end]
 
     finish_ind = df_after_landing.reset_index().loc[0, 'index']
     # Jump dataframe begins 10 time steps before speed breach, ~ 2 seconds
@@ -102,8 +104,6 @@ def find_jump(df, speed=2):
 
 
 def get_elev(df, units='Meters'):
-    # Could be modified to take a list of tuples, or list of lists, or 2D array
-    # Could be written to perform a single request for a single lat-lon combo.
     """GET Elevation from USGS National Map-Elevation Point Query Service API
     (https://nationalmap.gov/epqs/)
     Input is a dataframe, within which there are 'lat' and 'lon' columns for
@@ -113,6 +113,8 @@ def get_elev(df, units='Meters'):
     Optional positional argument is units as either 'Meters' or 'Feet'.
     Default is Meters
     """
+    # Could be modified to take a list of tuples, or list of lists, or 2D array
+    # Could be written to perform a single request for a single lat-lon combo.
     url = "https://nationalmap.gov/epqs/pqs.php?"
 
     def query_USGS(address):
