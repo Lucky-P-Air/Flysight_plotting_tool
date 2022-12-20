@@ -26,6 +26,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # from datetime import datetime
 from tkinter import Tk
 from tkinter import filedialog
+import plotly.graph_plots as go
 
 # Reference Notes for development
 # Converting GPS coordinates:
@@ -155,6 +156,25 @@ def load_flysight(filename):
     # units_row = pd.read_csv(filename, nrows = 2, usecols=header_cols)
     return raw
 
+
+def make_plotly(df, csvname=''):
+    fig = go.Figure()
+    x1 = df['time_elapsed']
+    y1 = df['hMSL']
+    fig.addtrace(go.Scatter(x=x1, y=1,
+                            fill='toself',
+                            fillcolor='rgba(0, 176, 246, 0.2)',
+                            line_color='rgba(255, 255, 255, 0)',
+                            name='Premium',
+                            showlegend=False ,
+                            )
+                 )
+    fig.add_trace(go.Scatter(x=x1, y=y1,
+                             line_color='rgb(0, 176, 246)',
+                             name='Premium',
+                             )
+                  )
+    return
 
 def open_file():
     """Explorer Window to locate & open Flysight raw CSV file"""
