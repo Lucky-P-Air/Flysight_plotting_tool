@@ -16,7 +16,10 @@ class ControlGUI(tk.Tk):
         self.BWIDTH = 3  # Border width
         self.track_filename = None
         self.track_title = None
-        self._gui_options = {}
+        self._gui_options = {'track_filename': '',
+                             'track_title': '',
+                             'elev_bool': False,
+                             }
 
 # Some of these methods could be abstracted into lower-level classes of GUI-subcomponents
     def entry_text_clear(self) -> None:
@@ -66,6 +69,7 @@ class ControlGUI(tk.Tk):
         #     print(f'{key}: {value}')
 
     def update_title(self):
+        # TO-DO: Show some kinda 'Updated!' status when called
         self.track_title = self.get_entry()
 
 
@@ -143,10 +147,10 @@ class ControlGUIBuilder(GUIBuilder):
                                       pady=self._gui.PAD_BETA,
                                       )
         self._gui.lbl_title = tk.Label(text="Jump Title:",
-                                      master=self._gui.frm_text,
-                                      borderwidth=self._gui.BWIDTH,
-                                      anchor="w",
-                                      ).pack(side=tk.LEFT)
+                                       master=self._gui.frm_text,
+                                       borderwidth=self._gui.BWIDTH,
+                                       anchor="w",
+                                       ).pack(side=tk.LEFT)
         self._gui.ent_title = tk.Entry(master=self._gui.frm_text,
                                        borderwidth=self._gui.BWIDTH,
                                        width=self._gui.MASTERWIDTH // 2,
@@ -156,10 +160,10 @@ class ControlGUIBuilder(GUIBuilder):
 
         # Text Submit Button Frame
         self._gui.frm_update_title = tk.Frame(master=self._gui.frm_input_file,
-                                             width=self._gui.MASTERWIDTH,
-                                             height=10,
-                                             pady=self._gui.PAD_BETA,
-                                             )
+                                              width=self._gui.MASTERWIDTH,
+                                              height=10,
+                                              pady=self._gui.PAD_BETA,
+                                              )
         # self._gui.but_submit = tk.Button(text="Update Title",
         tk.Button(text="Update Title",
                   master=self._gui.frm_update_title,
@@ -203,7 +207,7 @@ class ControlGUIBuilder(GUIBuilder):
         tk.Button(text="Close",
                   master=self._gui.frm_exit,
                   borderwidth=self._gui.BWIDTH,
-                  command=self._gui.quit,
+                  command=self._gui.destroy,  #quit,
                   ).pack()
         self._gui.frm_exit.pack()  # fill=tk.X, side=tk.BOTTOM, expand=True)
         pass
