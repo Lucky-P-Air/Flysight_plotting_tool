@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import flysight_ops as fs
 from os import getcwd
+
 # import tkinter.ttk as ttk
 
 BROWSE_DIR = getcwd()  # Starting directory for launch 'Open File' window
@@ -12,10 +13,13 @@ class ControlGUI(tk.Tk):
     """Primary application GUI. Controls which flysight file is read in,
     titles for referring to the chosen track, options for data processing,
     and initiating a plot"""
+
     def __init__(self, geometry: tuple = (500, 300), title: str = "Flysight Track"):
         super().__init__()
         self.title(title)  # TO-DO: Replace This with a @setter
-        self.geometry(f"{int(geometry[0])}x{int(geometry[1])}")  # TO-DO: Replace This with a @setter
+        self.geometry(
+            f"{int(geometry[0])}x{int(geometry[1])}"
+        )  # TO-DO: Replace This with a @setter
         self.MASTERWIDTH = 130  # of window
         self.MASTERHEIGHT = 50  # of window
         self.PAD_ALPHA = 10  # Padding of frames (large; between sections)
@@ -23,12 +27,13 @@ class ControlGUI(tk.Tk):
         self.BWIDTH = 3  # Border width
         self.track_filename = None
         self.track_title = None
-        self._gui_options = {'track_filename': '',
-                             'track_title': '',
-                             'elev_bool': False,
-                             }
+        self._gui_options = {
+            "track_filename": "",
+            "track_title": "",
+            "elev_bool": False,
+        }
 
-# Some of these methods could be abstracted into lower-level classes of GUI-subcomponents
+    # Some of these methods could be abstracted into lower-level classes of GUI-subcomponents
     def entry_text_clear(self) -> None:
         """Clears Entry Text Field"""
         self.ent_title.delete(0, tk.END)
@@ -49,11 +54,11 @@ class ControlGUI(tk.Tk):
         """Launches Open-File explorer window to locate Flysight CSV Track"""
         self.track_filename = filedialog.askopenfilename(
             initialdir=BROWSE_DIR,  # TO-DO: replace with .env variable lookup
-            title='Select a Flysight CSV file',
-            filetypes=(('CSV Files', "*.csv*"), ("all files", "*.*"))
+            title="Select a Flysight CSV file",
+            filetypes=(("CSV Files", "*.csv*"), ("all files", "*.*")),
         )
-        self.track_title = self.track_filename.split('/')[-1]  # Drop file path
-        self.lbl_filename['text'] = self.track_filename
+        self.track_title = self.track_filename.split("/")[-1]  # Drop file path
+        self.lbl_filename["text"] = self.track_filename
         self.entry_text_clear()
         self.entry_text_insert(self.track_title)
 
@@ -71,15 +76,16 @@ class ControlGUI(tk.Tk):
         Instantiates FlysightTool for data processing/plotting
         """
         if self.track_filename:
-            self._gui_options = {"track_filename": self.track_filename,
-                                 "track_title": self.track_title,
-                                 "elev_bool": self.elev_bool.get(),
-                                 }
+            self._gui_options = {
+                "track_filename": self.track_filename,
+                "track_title": self.track_title,
+                "elev_bool": self.elev_bool.get(),
+            }
             fs.FlysightTool(self._gui_options)
         else:
             messagebox.showerror(
-                'No Input File',
-                "Error: You must provide a valid Flysight recorded track"
+                "No Input File",
+                "Error: You must provide a valid Flysight recorded track",
             )
 
     def update_title(self):
@@ -91,6 +97,7 @@ class ControlGUI(tk.Tk):
 class GUIBuilder(ABC):
     """GUI Builder Interface. \n
     May be unnecessary since only 1 Builder is planned (ControlGUIBuilder)"""
+
     @abstractmethod
     def pack_frm_input(self) -> None:
         pass
@@ -111,6 +118,7 @@ class GUIBuilder(ABC):
 class ControlGUIBuilder(GUIBuilder):
     """Concrete ControlGUI Builder class used to build up ControlGUI\n
     TO-DO: Pass in optional parameters for ControlGUI()"""
+
     def __init__(self) -> None:
         """Initialize blank slate ControlGUI"""
         self._gui = ControlGUI()
@@ -138,56 +146,64 @@ class ControlGUIBuilder(GUIBuilder):
     def pack_frm_input(self) -> None:
         """Assemble the tkinter Frame for Input operations in GUI"""
         # Initialize Frame for file input widgets
-        self._gui.frm_input_file = tk.LabelFrame(width=self._gui.MASTERWIDTH,
-                                                 pady=self._gui.PAD_ALPHA,
-                                                 )
-        tk.Button(text="Locate Flysight Track",
-                  master=self._gui.frm_input_file,
-                  width=25,
-                  borderwidth=self._gui.BWIDTH,
-                  pady=self._gui.PAD_ALPHA,
-                  command=self._gui.get_filename,
-                  anchor="center",
-                  ).pack()
+        self._gui.frm_input_file = tk.LabelFrame(
+            width=self._gui.MASTERWIDTH,
+            pady=self._gui.PAD_ALPHA,
+        )
+        tk.Button(
+            text="Locate Flysight Track",
+            master=self._gui.frm_input_file,
+            width=25,
+            borderwidth=self._gui.BWIDTH,
+            pady=self._gui.PAD_ALPHA,
+            command=self._gui.get_filename,
+            anchor="center",
+        ).pack()
         # Label the chosen filename, with full path
         filename = self._gui.track_filename or ""
-        self._gui.lbl_filename = tk.Label(textvariable=filename,
-                                          master=self._gui.frm_input_file,
-                                          pady=self._gui.PAD_BETA,
-                                          )
+        self._gui.lbl_filename = tk.Label(
+            textvariable=filename,
+            master=self._gui.frm_input_file,
+            pady=self._gui.PAD_BETA,
+        )
         self._gui.lbl_filename.pack()
 
         # EntryText for Track Title Updating
-        self._gui.frm_text = tk.Frame(master=self._gui.frm_input_file,
-                                      width=self._gui.MASTERWIDTH,
-                                      height=20,
-                                      padx=self._gui.PAD_ALPHA,
-                                      pady=self._gui.PAD_BETA,
-                                      )
-        tk.Label(text="Jump Title:",
-                 master=self._gui.frm_text,
-                 borderwidth=self._gui.BWIDTH,
-                 anchor="w",
-                 ).pack(side=tk.LEFT)
-        self._gui.ent_title = tk.Entry(master=self._gui.frm_text,
-                                       borderwidth=self._gui.BWIDTH,
-                                       width=self._gui.MASTERWIDTH // 2,
-                                       )
+        self._gui.frm_text = tk.Frame(
+            master=self._gui.frm_input_file,
+            width=self._gui.MASTERWIDTH,
+            height=20,
+            padx=self._gui.PAD_ALPHA,
+            pady=self._gui.PAD_BETA,
+        )
+        tk.Label(
+            text="Jump Title:",
+            master=self._gui.frm_text,
+            borderwidth=self._gui.BWIDTH,
+            anchor="w",
+        ).pack(side=tk.LEFT)
+        self._gui.ent_title = tk.Entry(
+            master=self._gui.frm_text,
+            borderwidth=self._gui.BWIDTH,
+            width=self._gui.MASTERWIDTH // 2,
+        )
         self._gui.ent_title.pack(side=tk.LEFT)
         self._gui.frm_text.pack()  # fill=tk.X, side=tk.BOTTOM, expand=True)
 
         # Text Submit Button Frame
-        self._gui.frm_update_title = tk.Frame(master=self._gui.frm_input_file,
-                                              width=self._gui.MASTERWIDTH,
-                                              height=10,
-                                              pady=self._gui.PAD_BETA,
-                                              )
-        tk.Button(text="Update Title",
-                  master=self._gui.frm_update_title,
-                  borderwidth=self._gui.BWIDTH,
-                  # width=40,
-                  command=self._gui.update_title,
-                  ).pack()
+        self._gui.frm_update_title = tk.Frame(
+            master=self._gui.frm_input_file,
+            width=self._gui.MASTERWIDTH,
+            height=10,
+            pady=self._gui.PAD_BETA,
+        )
+        tk.Button(
+            text="Update Title",
+            master=self._gui.frm_update_title,
+            borderwidth=self._gui.BWIDTH,
+            # width=40,
+            command=self._gui.update_title,
+        ).pack()
         self._gui.frm_update_title.pack()
         self._gui.frm_input_file.pack()
 
@@ -196,40 +212,44 @@ class ControlGUIBuilder(GUIBuilder):
         (Binary, checkmark, radio-button options, etc.)"""
         self._gui.frm_checks = tk.Frame()
         self._gui.elev_bool = tk.BooleanVar()
-        tk.Checkbutton(text="Include Ground Elevation from USGS",
-                       master=self._gui.frm_checks,
-                       borderwidth=self._gui.BWIDTH,
-                       pady=self._gui.PAD_ALPHA,
-                       variable=self._gui.elev_bool,
-                       # onvalue=True,
-                       # offvalue=False,
-                       # command=print_bool,
-                       ).pack()
+        tk.Checkbutton(
+            text="Include Ground Elevation from USGS",
+            master=self._gui.frm_checks,
+            borderwidth=self._gui.BWIDTH,
+            pady=self._gui.PAD_ALPHA,
+            variable=self._gui.elev_bool,
+            # onvalue=True,
+            # offvalue=False,
+            # command=print_bool,
+        ).pack()
         self._gui.frm_checks.pack()
 
     def pack_frm_plot(self) -> None:
         """Assemble the tkinter Frame for submission/plotting operations
         in GUI"""
         self._gui.frm_plot = tk.LabelFrame()
-        tk.Button(text="Plot Track",
-                  master=self._gui.frm_plot,
-                  borderwidth=self._gui.BWIDTH,
-                  width=self._gui.MASTERWIDTH//3,
-                  height=2,
-                  command=self._gui.post_gui_options,
-                  ).pack()
+        tk.Button(
+            text="Plot Track",
+            master=self._gui.frm_plot,
+            borderwidth=self._gui.BWIDTH,
+            width=self._gui.MASTERWIDTH // 3,
+            height=2,
+            command=self._gui.post_gui_options,
+        ).pack()
         self._gui.frm_plot.pack()
 
     def pack_frm_exit(self) -> None:
         """Assemble the tkinter Frame for Closing/Exiting"""
-        self._gui.frm_exit = tk.Frame(height=20,
-                                      pady=self._gui.PAD_ALPHA,
-                                      )
-        tk.Button(text="Close",
-                  master=self._gui.frm_exit,
-                  borderwidth=self._gui.BWIDTH,
-                  command=self._gui.destroy,  # quit,
-                  ).pack()
+        self._gui.frm_exit = tk.Frame(
+            height=20,
+            pady=self._gui.PAD_ALPHA,
+        )
+        tk.Button(
+            text="Close",
+            master=self._gui.frm_exit,
+            borderwidth=self._gui.BWIDTH,
+            command=self._gui.destroy,  # quit,
+        ).pack()
         self._gui.frm_exit.pack()  # fill=tk.X, side=tk.BOTTOM, expand=True)
         pass
 
