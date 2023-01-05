@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
+import flysight_plotly as fp
 from concurrent.futures import ThreadPoolExecutor  # , as_completed
 
 
@@ -18,7 +19,8 @@ class FlysightTool:
         self.track: FlysightTrack = self.track_builder.get_FlysightTrack()
         # self.track_plotter = FlysightPlotter(self.track)
         # FlysightPlotter is a planned breakout module for plotting
-        self.track.plot_track()  # placeholder brute-force plotter
+        # self.track.plot_track()  # placeholder brute-force plotter
+        self.track.plot_plotly()  # placeholder brute-force plotter
         # Add a cache for previously loaded tracks within session
 
 
@@ -277,6 +279,11 @@ class FlysightTrack:
         print(self.options["elev_bool"])
         build_figure(self.df, self.options["track_title"])
         plt.show()
+
+    def plot_plotly(self):
+        """Use Plotly library to generate a visualization of dataframe"""
+        # fp.make_plotly(self.df, self.options)
+        fp.make_dash(self)
 
 
 # if __name__ == '__main__':
