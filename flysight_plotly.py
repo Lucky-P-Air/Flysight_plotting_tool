@@ -7,9 +7,9 @@ VECTORS = {# "Time Elapsed (s)": "time_elapsed",
     "Velocity-Vertical": "velD",
     "Velocity-Total": "velT",
     "Altitude (MSL)": "hMSL",
-    # "Ground Elevation (MSL)": "ground_elev",  # add this based on boolean
     "Glide Ratio": "gr",
     }
+# TO-DO: Add dictionary lookup for line-colors & column
 VECTOR_AXES = {
     "Velocity-Horizontal": "y1",
     "Velocity-Vertical": "y1",
@@ -19,8 +19,8 @@ VECTOR_AXES = {
     "Glide Ratio": "y3",
     }
 WINDOW_PARAMS = {
-    "height": 700,
-    "width": 1400,
+    "height": 600,
+    "width": 1200,
     "y1min": 0,
     "y1max": 100,
     "y2min": 0,
@@ -70,8 +70,7 @@ def make_plotly(df, options: dict):
 
 def make_dash(flight_track):
     """Proof of concept to generate Dash application with plots
-    :param df: FlysightTrack
-    :param options: dict: Dictionary of GUI options"""
+    :param flight_track: FlysightTrack"""
     df = flight_track.df
     options = flight_track.options
     x1 = df['time_elapsed']
@@ -82,21 +81,22 @@ def make_dash(flight_track):
     dashapp = Dash(__name__)
     dashapp.layout = html.Div([
         html.H4(title,),
-        dcc.Graph(id="graph",
+        dcc.Graph(id="flysight_graph",
                   # figure=fig,
                   ),
         html.P("Toggle lines On/Off by clicking labels in the Legend above",),
-        dcc.Dropdown(id="dropdown",
+        dcc.Dropdown(
+            id="dropdown",
             options=list(VECTORS.keys()),
             value=list(VECTORS.keys()),
             multi=True,
-            ),
+        ),
     ])
 
     launch_browser()
 
     @dashapp.callback(
-        Output("graph", "figure"),
+        Output("flysight_graph", "figure"),
         Input("dropdown", "value"),
     )
     def update_line_chart(vectors):
@@ -115,41 +115,57 @@ def make_dash(flight_track):
         fig.update_traces(mode="lines")
         fig.update_layout(
             autosize=False,
+            plot_bgcolor="rgb(255,255,255)",
             height=WINDOW_PARAMS["height"],
             width=WINDOW_PARAMS["width"],
             hovermode="x unified",
             xaxis={
                 "title": "Time Elapsed (s)",
-                "domain": [0.1, 0.9],  # Set range within window taken up by x-axis
-                "showline": False,
+                "domain": [0, 0.9],  # Set range within window taken up by x-axis
+                "showline": True,
+                "linecolor": "black",
                 "showgrid": False,
             },
             yaxis={
                 "title": "Velocity (units)",
+                "showline": True,
+                "linecolor": "black",
+                "mirror": True,
+                "rangemode": "nonnegative",
                 "showgrid": False,
+                # "ticksuffix": "m/s",
+                "ticks": "outside",
                 "zeroline": True,
             },
             yaxis2={
                 "title": "Elevation, MSL (units)",
+                "anchor": "free",
+                "overlaying": "y",
+                "side": "right",
+                "position": .94,  # Place axis 90% down x-axis
+                "showgrid": False,
+                "ticks": "outside",
+                "ticksuffix": "m",
+                "showline": True,
+                "linecolor": "black"
+            },
+            yaxis3={
+                # "title": "Glide Ratio",
+                "range": [0, 4],
+                "nticks": 5,
+                "ticks": "outside",
+                "ticksuffix": ":1",
                 "anchor": "x",
                 "overlaying": "y",
                 "side": "right",
                 "showgrid": False,
                 "zeroline": False,
-            },
-            yaxis3={
-                "title": "Glide Ratio",
-                "range": [0, 5],
-                "anchor": "free",
-                "overlaying": "y",
-                "side": "right",
-                "showgrid": False,
-                "zeroline": False,
-                "position": .97  # Place axis 90% down x-axis
+                "showline": True,
+                "linecolor": "black",
             },
             legend={
-                "bordercolor": "black",
-                "borderwidth": 1,
+                # "bordercolor": "black",
+                # "borderwidth": 1,
                 "orientation": "h",
                 "xanchor": "center",
                 "x": 0.5,
